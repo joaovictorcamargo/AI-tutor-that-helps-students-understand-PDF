@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  password      String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  pdfs          PDF[]
+  chatHistories ChatHistory[]
+}
+
+model PDF {
+  id            String        @id @default(uuid())
+  filename      String
+  content       String        @default("")
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  chatHistories ChatHistory[]
+  annotations   Annotation[]
+}
+
+model ChatHistory {
+  id        String      @id @default(uuid())
+  userId    String
+  pdfId     String
+  user      User        @relation(fields: [userId], references: [id])
+  pdf       PDF         @relation(fields: [pdfId], references: [id])
+  messages   Message[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Message {
+  id            String      @id @default(uuid())
+  content       String
+  role          String      // 'user' or 'assistant'
+  chatHistoryId String
+  chatHistory   ChatHistory @relation(fields: [chatHistoryId], references: [id])
+  createdAt     DateTime    @default(now())
+}
+
+model Annotation {
+  id        String   @id @default(uuid())
+  type      String   // 'highlight' or 'circle'
+  content   String   // JSON string containing coordinates and other metadata
+  pageNumber Int
+  pdfId     String
+  pdf       PDF      @relation(fields: [pdfId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
